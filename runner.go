@@ -6,8 +6,6 @@ import (
 	"runtime/debug"
 	"sort"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Runner struct {
@@ -17,7 +15,7 @@ type Runner struct {
 	snapshot chan []*Job
 	running  bool
 	location *time.Location
-	Log      *logrus.Logger
+	Log      Logger
 }
 
 type Work interface {
@@ -47,11 +45,11 @@ func (s byTime) Less(i, j int) bool {
 	return s[i].Next.Before(s[j].Next)
 }
 
-func NewRunner(logger *logrus.Logger) *Runner {
+func NewRunner(logger Logger) *Runner {
 	return NewRunnerWithLocation(time.Now().Location(), logger)
 }
 
-func NewRunnerWithLocation(location *time.Location, logger *logrus.Logger) *Runner {
+func NewRunnerWithLocation(location *time.Location, logger Logger) *Runner {
 	return &Runner{
 		jobs:     nil,
 		add:      make(chan *Job),
@@ -122,8 +120,8 @@ func (r *Runner) Stop() {
 func (run *Runner) runWithRecovery(work Work) {
 	defer func() {
 		if r := recover(); r != nil {
-			run.Log.Errorln("panic running job: ", r)
-			run.Log.Errorln(string(debug.Stack()))
+			run.Log.Println("panic running job: ", r)
+			run.Log.Println(string(debug.Stack()))
 		}
 	}()
 	work.Run()

@@ -3,12 +3,10 @@ package taskRunner
 import (
 	"bitbucket.org/GromKri/go-qiwi-service/model"
 	"github.com/jinzhu/gorm"
-	"github.com/sirupsen/logrus"
 )
 
 type TaskManager struct {
-	db     *gorm.DB
-	logger *logrus.Logger
+	logger Logger
 	Runner *Runner
 	store  TaskStore
 }
@@ -20,9 +18,12 @@ const (
 	STATUS_ERROR   = "ERROR"
 )
 
-func NewTaskManager(db *gorm.DB, logger *logrus.Logger, store TaskStore) *TaskManager {
+type Logger interface {
+	Println(a ...interface{})
+}
+
+func NewTaskManager(db *gorm.DB, logger Logger, store TaskStore) *TaskManager {
 	return &TaskManager{
-		db:     db,
 		logger: logger,
 		Runner: NewRunner(logger),
 		store:  store,
@@ -43,7 +44,7 @@ func (m *TaskManager) Initialize(workMap WorkMap) error {
 		if constructor, ok := workMap[t.WorkType]; ok && constructor != nil {
 			jobs = append(jobs, constructor(m, &t))
 		} else {
-			m.logger.Warningln("unsupported task type: ", t.WorkType)
+			m.logger.Println("unsupported task type: ", t.WorkType)
 		}
 	}
 
@@ -56,28 +57,3 @@ func (m *TaskManager) Initialize(workMap WorkMap) error {
 func (m *TaskManager) Stop() {
 	m.Runner.Stop()
 }
-
-//func (m *TaskManager) AddPaymentCheck(paymentId int64, timeout time.Time) error {
-//	task, err := m.store.Add(model.SystemTask{
-//		TimeOut:    timeout,
-//		WorkType:   TASK_PAYMENT_CHECK,
-//		Status:     STATUS_STARTED,
-//		PayloadInt: paymentId,
-//	})
-//	if err != nil {
-//		return err
-//	}
-//
-//	m.Runner.AddWork(timeout, &PaymentCheckTask{
-//		ID:        int64(task.ID),
-//		db:        m.db,
-//		logger:    m.logger,
-//		paymentId: paymentId,
-//		startTime: time.Now(),
-//		timeout:   timeout,
-//	})
-//
-//	util.PrettyPrint(m.Runner.Jobs(), m.logger)
-//
-//	return nil
-//}
