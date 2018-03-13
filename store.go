@@ -1,11 +1,23 @@
 package taskRunner
 
 import (
-"bitbucket.org/GromKri/go-qiwi-service/model"
+	"time"
 )
 
+type PersistedTask struct {
+	ID        uint64     `json:"id"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	DeletedAt *time.Time `json:"deletedAt,omitempty" sql:"index"`
+	TimeOut    time.Time `json:"timeout" `
+	WorkType   string    `json:"workType"`
+	Status     string    `json:"status"`
+	Repeatable bool      `json:"repeatable"`
+	PayloadInt int64     `json:"payload"`
+}
+
 type TaskStore interface {
-	Add(attributes model.SystemTask) (*model.SystemTask, error)
-	Fetch() ([]model.SystemTask, error)
-	Remove(attributes model.SystemTask) error
+	Add(attributes PersistedTask) (*PersistedTask, error)
+	Fetch() ([]PersistedTask, error)
+	Remove(attributes PersistedTask) error
 }

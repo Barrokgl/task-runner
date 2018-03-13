@@ -1,10 +1,5 @@
 package taskRunner
 
-import (
-	"bitbucket.org/GromKri/go-qiwi-service/model"
-	"github.com/jinzhu/gorm"
-)
-
 type TaskManager struct {
 	logger Logger
 	Runner *Runner
@@ -22,7 +17,7 @@ type Logger interface {
 	Println(a ...interface{})
 }
 
-func NewTaskManager(db *gorm.DB, logger Logger, store TaskStore) *TaskManager {
+func NewTaskManager(logger Logger, store TaskStore) *TaskManager {
 	return &TaskManager{
 		logger: logger,
 		Runner: NewRunner(logger),
@@ -30,7 +25,7 @@ func NewTaskManager(db *gorm.DB, logger Logger, store TaskStore) *TaskManager {
 	}
 }
 
-type WorkContstructor func(m *TaskManager, task *model.SystemTask) *Job
+type WorkContstructor func(m *TaskManager, task *PersistedTask) *Job
 type WorkMap map[string]WorkContstructor
 
 func (m *TaskManager) Initialize(workMap WorkMap) error {
