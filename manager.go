@@ -1,9 +1,12 @@
 package taskRunner
 
+import "errors"
+
 type TaskManager struct {
 	logger Logger
 	Runner *Runner
-	store  TaskStore
+	Store  TaskStore
+	jobMap JobMap
 }
 
 const (
@@ -21,15 +24,16 @@ func NewTaskManager(logger Logger, store TaskStore) *TaskManager {
 	return &TaskManager{
 		logger: logger,
 		Runner: NewRunner(logger),
-		store:  store,
+		Store:  store,
+		jobMap: make(JobMap),
 	}
 }
 
-type WorkContstructor func(m *TaskManager, task *PersistedTask) *Job
-type WorkMap map[string]WorkContstructor
+type JobConstructor func(m *TaskManager, task *PersistedTask) *Job
+type JobMap map[string]JobConstructor
 
-func (m *TaskManager) Initialize(workMap WorkMap) error {
-	tasks, err := m.store.Fetch()
+func (m *TaskManager) Initialize(workMap JobMap) error {
+	tasks, err := m.Store.Fetch()
 	if err != nil {
 		return err
 	}
@@ -37,7 +41,10 @@ func (m *TaskManager) Initialize(workMap WorkMap) error {
 	jobs := []*Job{}
 	for _, t := range tasks {
 		if constructor, ok := workMap[t.WorkType]; ok && constructor != nil {
-			jobs = append(jobs, constructor(m, &t))
+			job := constructor(m, &t)
+			if job != nil {
+				jobs = append(jobs, job)
+			}
 		} else {
 			m.logger.Println("unsupported task type: ", t.WorkType)
 		}
@@ -51,4 +58,19 @@ func (m *TaskManager) Initialize(workMap WorkMap) error {
 
 func (m *TaskManager) Stop() {
 	m.Runner.Stop()
+}
+
+func (m *TaskManager) AddTask(task PersistedTask) (*PersistedTask, error) {
+	constructor, ok := m.jobMap[task.WorkType]
+	if !ok || constructor == nil {
+		return nil, errors.New("Unkown work type")
+	}
+
+	persistedTask, err := m.Store.Add(task)
+	if err != nil {
+		return nil, err
+	}
+
+	m.Runner.AddJob(task.TimeOut, constructor(m, persistedTask))
+	return &task, nil
 }

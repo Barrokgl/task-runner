@@ -65,6 +65,15 @@ func (r *Runner) AddWork(t time.Time, work Work) {
 	r.Schedule(NewScheduled(t), work)
 }
 
+func (r *Runner) AddJob(t time.Time, job *Job) {
+	if !r.running {
+		r.jobs = append(r.jobs, job)
+		return
+	}
+
+	r.add <- job
+}
+
 func (r *Runner) Schedule(schedule Schedule, work Work) {
 	job := &Job{
 		Schedule: schedule,

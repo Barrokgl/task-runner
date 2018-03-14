@@ -14,6 +14,7 @@ type PersistedTask struct {
 	Status     string    `json:"status"`
 	Repeatable bool      `json:"repeatable"`
 	Payload string     	 `json:"payload"`
+	Async bool 			 `json:"async"`
 }
 
 type TaskStore interface {
