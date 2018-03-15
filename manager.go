@@ -32,7 +32,11 @@ func NewTaskManager(logger Logger, store TaskStore) *TaskManager {
 type JobConstructor func(m *TaskManager, task *PersistedTask) *Job
 type JobMap map[string]JobConstructor
 
-func (m *TaskManager) Initialize(workMap JobMap) error {
+func (m *TaskManager) Initialize(jobMap JobMap) error {
+	for k, v := range jobMap {
+		m.jobMap[k] = v
+	}
+
 	tasks, err := m.Store.Fetch()
 	if err != nil {
 		return err
@@ -40,7 +44,7 @@ func (m *TaskManager) Initialize(workMap JobMap) error {
 
 	jobs := []*Job{}
 	for _, t := range tasks {
-		if constructor, ok := workMap[t.WorkType]; ok && constructor != nil {
+		if constructor, ok := m.jobMap[t.WorkType]; ok && constructor != nil {
 			job := constructor(m, &t)
 			if job != nil {
 				jobs = append(jobs, job)
