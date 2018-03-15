@@ -76,5 +76,5 @@ func (m *TaskManager) AddTask(task PersistedTask) (*PersistedTask, error) {
 	}
 
 	m.Runner.AddJob(task.TimeOut, constructor(m, persistedTask))
-	return &task, nil
+	return persistedTask, nil
 }
